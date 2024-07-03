@@ -30,6 +30,7 @@ Here is a sample configuration:
 }
 ```
 3. Repository contains sampleSettings.json file with example of ready-to-work configuration.
+4. Add published AssistantCLI(found in releases or publish by yourself) to the path environment variable
 
 ### Command Usage 
 
