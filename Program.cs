@@ -1,29 +1,26 @@
-﻿using Microsoft.ML.OnnxRuntimeGenAI;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.ML.OnnxRuntimeGenAI;
 
-namespace AssistantCLI;
+namespace OriGames.AssistantCLI;
 
 public class AssistantCLI
 {
-    private const string s_contextFilePath = "context.txt";
-    private const string s_modelPath =
-        @"H:\Phi-3-mini-4k-instruct-onnx\cpu_and_mobile\cpu-int4-rtn-block-32";
-
-    private const string s_systemPrompt = "You are an intelligent and user-friendly CLI AI assistant, specializing in providing precise and efficient search results for users' inquiries. " +
-        "Don't use markdown or any formatting" +
-        "Your responses should be direct, concise, and strictly limited to the information that the user specifically requested. " +
-        "Efficiency and accuracy are your primary objectives - eliminate unnecessary details or suggestions, focusing solely on delivering the information inquired." +
-        "If you do not know the answer to a question, just say 'I don't know'." + 
-        "If user asks for some command provide one example of using";
-
+    private const string s_settingsFilePath = "settings.json";
+    
+    private static AppSettings s_appSettings = new();
+    
     public static void Main(string[] args)
     {
         if (args.Length == 0)
         {
-            Console.WriteLine("Usage: ask <your question>");
+            Console.WriteLine("Usage: gpt *your question*");
+
             return;
         }
+        
+        ReadSettings();
 
-        var command = args[0].ToLower();
+        var command = args[0];
         
         if (command == "clear")
         {            
@@ -32,8 +29,21 @@ public class AssistantCLI
             ClearContext();
             return;
         }
-
+        
         ProcessCommand(string.Join(" ", args));
+    }
+    
+    private static void ReadSettings()
+    {
+        var builder = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile(s_settingsFilePath, optional: false, reloadOnChange: true);
+      
+        var configurationSection = builder.Build().GetSection("Settings");
+        
+        s_appSettings.ContextFilePath = configurationSection[nameof(AppSettings.ContextFilePath)] ?? throw new InvalidOperationException();
+        s_appSettings.ModelPath = configurationSection[nameof(AppSettings.ModelPath)] ?? throw new InvalidOperationException();
+        s_appSettings.SystemPrompt = configurationSection[nameof(AppSettings.SystemPrompt)] ?? throw new InvalidOperationException();
     }
 
     private static void ProcessCommand(string userCommand)
@@ -42,7 +52,7 @@ public class AssistantCLI
         {
             Console.WriteLine($"Executing command...");
             
-            var executionModel = new Model(s_modelPath);
+            var executionModel = new Model(s_appSettings.ModelPath);
             var tokenProcessor = new Tokenizer(executionModel);
             var context = UpdateContext(userCommand);
 
@@ -60,7 +70,7 @@ public class AssistantCLI
     {
         var currentContext = LoadContext();
         var newContext = string.IsNullOrWhiteSpace(currentContext)
-            ? FormattedPrompt(s_systemPrompt, userCommand)
+            ? FormattedPrompt(s_appSettings.SystemPrompt, userCommand)
             : $"{currentContext}{FormattedPrompt(userCommand)}";
         return newContext;
     }
@@ -107,10 +117,10 @@ public class AssistantCLI
     private static void SaveContext(string context, string response)
     {
         context += response;
-        File.WriteAllText(s_contextFilePath, context);
+        File.WriteAllText(s_appSettings.ContextFilePath, context);
     }
 
-    private static void ClearContext() => File.WriteAllText(s_contextFilePath, string.Empty);
+    private static void ClearContext() => File.WriteAllText(s_appSettings.ContextFilePath, string.Empty);
         
-    private static string LoadContext() => File.Exists(s_contextFilePath) ? File.ReadAllText(s_contextFilePath) : string.Empty;
+    private static string LoadContext() => File.Exists(s_appSettings.ContextFilePath) ? File.ReadAllText(s_appSettings.ContextFilePath) : string.Empty;
 }
