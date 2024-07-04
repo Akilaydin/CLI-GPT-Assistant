@@ -8,9 +8,15 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-- Trained ML model
+- Trained ML model, that runs on CPU. For example from [here](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct)
 
-### Installation
+### Installation from a release
+
+1. Download the latest release
+2. Unpack .zip archive and add the location of unpacking to the path environment variable
+3. Adjust the settings.json so it contains path to downloaded model
+
+### Installation from the source code
 
 1. Clone the repository.
 ```bash
@@ -30,7 +36,7 @@ Here is a sample configuration:
 }
 ```
 3. Repository contains sampleSettings.json file with example of ready-to-work configuration.
-4. Add published AssistantCLI(found in releases or publish by yourself) to the path environment variable
+4. Compile, publish and add published AssistantCLI to the path environment variable
 
 ### Command Usage 
 
